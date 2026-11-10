@@ -7,3 +7,6 @@
 
 .palette-row.active{color:#292b3e;font-weight:600}.palette-row.active>svg{color:#292b3e}.palette-row.active .swatches i{border-color:#0000002e}
 .swatches{gap:2px;flex:none}.swatches i,.custom-palette>i{width:13px;height:13px}.palette-row{white-space:nowrap;gap:8px}
+
+/* Палитры: инструкция и шаблон импорта */
+.palette-help{font-size:10px;line-height:1.5;color:#777987;margin-top:8px}.palette-help code{font-size:10px;color:#6558bd;background:#f4f2ff;padding:1px 3px;border-radius:3px}.palette-template{margin-top:6px;padding:0;border:0;background:transparent;color:#6e5fc9;font-size:10px;text-decoration:underline;text-underline-offset:2px}.custom-palette{flex-wrap:wrap}.custom-palette>span{width:100%;font-size:10px;color:#696a75;margin-bottom:2px}.custom-palette button{margin-left:auto}

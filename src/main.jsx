@@ -1,6 +1,6 @@
 import React,{useEffect,useMemo,useRef,useState} from 'react';
 import{createRoot}from'react-dom/client';
-import{Search, Sparkles, Layers, Shapes, Palette, Download, Upload, Plus, Minus, RotateCw, Copy, Trash2, Eye, EyeOff, ChevronDown, ChevronRight, MousePointer2, Undo2, Redo2, Maximize2, Grid2X2, WandSparkles, BookOpen, Smartphone, Headphones, Wallet, Coins, PenLine, Folder, Lightbulb, Puzzle, Image as ImageIcon, Check, X, ArrowUp, ArrowDown, AlignCenter, SlidersHorizontal, FileImage, LayoutTemplate, Flower2}from'lucide-react';
+import{Search, Sparkles, Layers, Shapes, Palette, Download, Upload, Plus, Minus, RotateCw, Copy, Trash2, Eye, EyeOff, ChevronDown, ChevronRight, MousePointer2, Undo2, Redo2, Maximize2, Grid2X2, WandSparkles, BookOpen, Smartphone, Headphones, Wallet, Coins, PenLine, Folder, Lightbulb, Puzzle, Check, X, ArrowUp, ArrowDown, AlignCenter, SlidersHorizontal, FileImage, LayoutTemplate, Flower2}from'lucide-react';
 import components from './data/components.json';
 import {backgrounds} from './data/backgrounds.js';
 import './style.css';
@@ -11,7 +11,7 @@ const palettes=[
  {id:'warm',name:'Тёплая / мятная',bg:'#FDD7B9',colors:['#BEEBEB','#80DADA','#FDD7B9','#D27532','#F9ECB0','#181817']},
  {id:'cool',name:'Мятная / контрастная',bg:'#BEEBEB',colors:['#BEEBEB','#5ABEBE','#FFD4F2','#6D7BFC','#B6C6FE','#181817']}
 ];
-const icons={'Пазлы':Puzzle,'Книга':BookOpen,'Телефон':Smartphone,'Наушники':Headphones,'Лампа':Lightbulb,'Кошелек':Wallet,'Монета':Coins,'Ручка':PenLine,'Папка':Folder,'Букет цветов':Flower2,'Фон':ImageIcon};
+const icons={'Пазлы':Puzzle,'Книга':BookOpen,'Телефон':Smartphone,'Наушники':Headphones,'Лампа':Lightbulb,'Кошелек':Wallet,'Монета':Coins,'Ручка':PenLine,'Папка':Folder,'Букет цветов':Flower2};
 const semantic={
  'обучение':['Книга','Пазлы','Ручка','Лампа'],'образование':['Книга','Пазлы','Ручка','Лампа'],'знания':['Книга','Лампа','Пазлы'],'курс':['Книга','Телефон','Пазлы'],'чтение':['Книга','Лампа'],
  'финансы':['Кошелек','Монета','Телефон'],'деньги':['Кошелек','Монета'],'банк':['Кошелек','Монета','Телефон'],'оплата':['Телефон','Монета','Кошелек'],
@@ -21,6 +21,7 @@ const semantic={
 };
 const uid=()=>Math.random().toString(36).slice(2,9);
 const escapeXml=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
+const safeDownloadName=value=>{const cleaned=String(value||'').normalize('NFC').trim().replace(/[\\/:*?"<>|\u0000-\u001F]/g,'-').replace(/[\s]+/g,'-').replace(/-+/g,'-').replace(/^[.\-]+|[.\-]+$/g,'').slice(0,100);return cleaned||'Новая-композиция'};
 function colorize(markup,colors,monochrome=false){
  const sourceMap={'#D7CDF5':colors[0],'#7864D7':colors[1]||colors[0],'#F9ECB0':colors[2]||colors[0],'#F9A3AA':colors[3]||colors[2]||colors[0],'#AA9BF0':colors[1]||colors[0],'#FFE3E1':colors[4]||colors[0],'#181817':colors[5]||colors[colors.length-1]||'#24233A'};
  return markup.replace(/#[0-9a-fA-F]{3,8}\b/g,c=>{if(!monochrome)return sourceMap[c.toUpperCase()]||c;const hex=c.length===4?'#'+[...c.slice(1)].map(x=>x+x).join(''):c;const rgb=hex.length===7?hex.slice(1).match(/.{2}/g).map(v=>parseInt(v,16)):[128,128,128];const light=(rgb[0]*.299+rgb[1]*.587+rgb[2]*.114)>155;return light?colors[0]:(colors[1]||colors[0])});
@@ -61,7 +62,7 @@ function App(){
  const widthFor=it=>boundsFor(it).width*OBJECT_SCALE;
  const heightFor=it=>boundsFor(it).height*OBJECT_SCALE;
  const activePalette=customColors||palette.colors;
- const categories=['Все','Технологии','Обучение','Финансы','Работа','Предметы','Фоны'];
+ const categories=['Все','Технологии','Обучение','Финансы','Работа','Предметы'];
  const filtered=useMemo(()=>components.filter(c=>(category==='Все'||c.category===category)&&c.name.toLowerCase().includes(query.toLowerCase())),[category,query,libraryRevision]);
  const selectedItem=items.find(x=>x.instanceId===selected);
  const pushHistory=(next)=>{setHistory(h=>[...h.slice(-29),items]);setFuture([]);setItems(next)};
@@ -95,7 +96,7 @@ function App(){
   const body=items.filter(x=>x.visible).map(x=>{const b=boundsFor(x);const w=widthFor(x);const h=heightFor(x);const ns=namespaceSvg(markupFor(x),x.defs||'',x.instanceId);const markup=colorize(ns.markup,activePalette,x.role==='background');return `<g transform="translate(${x.x+w/2} ${x.y+h/2}) rotate(${x.rotation})" opacity="${x.opacity??1}"><svg x="${-w/2}" y="${-h/2}" width="${w}" height="${h}" viewBox="${b.x} ${b.y} ${b.width} ${b.height}" preserveAspectRatio="xMidYMid meet" overflow="visible"><defs>${ns.defs||''}</defs>${markup}</svg></g>`}).join('\n');
   const scaleGroup=body;
   const svg=`<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1200" height="630" viewBox="0 0 1200 630"><title>${escapeXml(title)}</title>${backgroundSvg(palette.id,customColors,W,H)}${scaleGroup}</svg>`;
-  const blob=new Blob([svg],{type:'image/svg+xml;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`illustration-${format.toLowerCase()}.svg`;a.click();URL.revokeObjectURL(url);setNotice('SVG экспортирован. Векторные пути сохранены.');setTimeout(()=>setNotice(''),3500);
+  const blob=new Blob([svg],{type:'image/svg+xml;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`${safeDownloadName(title)}-${format.toLowerCase()}.svg`;document.body.appendChild(a);a.click();a.remove();window.setTimeout(()=>URL.revokeObjectURL(url),1000);setNotice(`SVG экспортирован: ${a.download}. Векторные пути сохранены.`);setTimeout(()=>setNotice(''),3500);
  };
  const importSvg=e=>{const file=e.target.files?.[0];if(!file)return;const reader=new FileReader();reader.onload=()=>{const doc=new DOMParser().parseFromString(reader.result,'image/svg+xml');const root=doc.documentElement;if(root.tagName.toLowerCase()!=='svg')return;const group=doc.createElementNS('http://www.w3.org/2000/svg','g');[...root.children].filter(el=>el.tagName.toLowerCase()!=='defs').forEach(el=>group.appendChild(el.cloneNode(true)));const comp={id:'uploaded-'+uid(),name:file.name.replace(/\.svg$/i,''),category:'Загруженные',viewBox:root.getAttribute('viewBox')||'0 0 1200 630',defs:root.querySelector('defs')?[...root.querySelector('defs').children].map(x=>x.outerHTML).join(''):'',markup:group.outerHTML};components.push(comp);const tmp=document.createElementNS(SVG_NS,'svg');tmp.setAttribute('width','5000');tmp.setAttribute('height','12000');tmp.style.cssText='position:fixed;left:-20000px;visibility:hidden;overflow:visible';document.body.appendChild(tmp);const mb=measureMarkup(tmp,comp.markup);if(mb){comp.bbox=mb;setBounds(prev=>({...prev,[comp.id]:{Lmain:mb}}))}tmp.remove();setLibraryRevision(v=>v+1);setCategory('Все');addComponent(comp);setNotice('SVG добавлен в библиотеку как векторный объект.');setTimeout(()=>setNotice(''),3500)};reader.readAsText(file);e.target.value=''};
  const uploadPalette=e=>{const f=e.target.files?.[0];if(!f)return;const reader=new FileReader();reader.onload=()=>{let txt=String(reader.result);let colors=[...txt.matchAll(/#[0-9a-fA-F]{6}\b/g)].map(x=>x[0]);if(!colors.length){try{const j=JSON.parse(txt);colors=j.colors||j.palette||[]}catch{}}colors=colors.filter(x=>/^#[0-9a-fA-F]{6}$/.test(x));if(colors.length){setCustomColors(colors);setNotice(`Загружена палитра: ${colors.length} цветов.`)}else setNotice('Не удалось найти HEX-цвета. Используйте JSON, TXT или SVG с кодами #RRGGBB.');setTimeout(()=>setNotice(''),4000)};reader.readAsText(f);e.target.value=''};
