@@ -10,3 +10,10 @@
 
 /* Палитры: инструкция и шаблон импорта */
 .palette-help{font-size:10px;line-height:1.5;color:#777987;margin-top:8px}.palette-help code{font-size:10px;color:#6558bd;background:#f4f2ff;padding:1px 3px;border-radius:3px}.palette-template{margin-top:6px;padding:0;border:0;background:transparent;color:#6e5fc9;font-size:10px;text-decoration:underline;text-underline-offset:2px}.custom-palette{flex-wrap:wrap}.custom-palette>span{width:100%;font-size:10px;color:#696a75;margin-bottom:2px}.custom-palette button{margin-left:auto}
+/* Clear instructions for importing a custom color palette */
+.palette-help{font-size:10px;line-height:1.55;color:#777987;margin-top:10px;padding:10px;background:#faf9ff;border:1px solid #eeebfa;border-radius:7px}
+.palette-help strong{display:block;color:#4f5060;font-size:11px;margin-bottom:4px}
+.palette-help p{margin:0}
+.palette-help code{font-size:10px;color:#6558bd;background:#f0edff;padding:1px 3px;border-radius:3px}
+.palette-template{display:inline-flex;align-items:center;gap:5px;margin-top:8px;padding:0;border:0;background:transparent;color:#6e5fc9;font-size:10px;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+.artboard.rotating{cursor:grabbing}
