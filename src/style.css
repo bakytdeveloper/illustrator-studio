@@ -17,3 +17,131 @@
 .palette-help code{font-size:10px;color:#6558bd;background:#f0edff;padding:1px 3px;border-radius:3px}
 .palette-template{display:inline-flex;align-items:center;gap:5px;margin-top:8px;padding:0;border:0;background:transparent;color:#6e5fc9;font-size:10px;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
 .artboard.rotating{cursor:grabbing}
+
+/* Responsive editor shell: the SVG document stays 1200×630; only its preview zoom changes. */
+html, body, #root { width:100%; height:100%; min-width:0 !important; min-height:0 !important; margin:0; }
+body { overflow:hidden !important; overscroll-behavior:none; }
+.app-shell { display:flex; flex-direction:column; width:100%; height:100vh; height:100dvh; min-width:0 !important; min-height:0 !important; overflow:hidden; }
+.topbar { flex:0 0 60px; width:100%; min-width:0; max-width:100%; overflow-x:auto; overflow-y:hidden; white-space:nowrap; scrollbar-width:thin; }
+.topbar > * { flex-shrink:0; }
+.brand { min-width:220px; }
+.doc-name { min-width:90px; flex:1 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.top-actions { flex:0 0 auto; }
+
+/* The viewport, not the page, owns the horizontal scroll for all three panels. */
+.workspace-viewport {
+    display:block;
+    position:relative;
+    flex:1 1 0;
+    width:100%;
+    height:0;
+    min-width:0 !important;
+    min-height:0 !important;
+    max-width:100%;
+    overflow-x:auto !important;
+    overflow-y:hidden !important;
+    overscroll-behavior-x:auto;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:auto;
+    scrollbar-color:#887db8 #e8e6ef;
+    touch-action:pan-x pan-y;
+}
+.workspace-viewport::-webkit-scrollbar { height:14px; }
+.workspace-viewport::-webkit-scrollbar-track { background:#e8e6ef; border-top:1px solid #d9d6e4; }
+.workspace-viewport::-webkit-scrollbar-thumb { background:#887db8; border:3px solid #e8e6ef; border-radius:10px; }
+.workspace-viewport::-webkit-scrollbar-thumb:hover { background:#6f639f; }
+.workspace-viewport:focus-visible { outline:2px solid #8d80d7; outline-offset:-2px; }
+.workspace {
+    display:grid !important;
+    grid-template-columns:250px minmax(560px,1fr) 310px !important;
+    grid-auto-flow:column;
+    width:max(100%,1120px) !important;
+    min-width:1120px !important;
+    max-width:none !important;
+    height:100%;
+    min-height:0;
+    flex:none !important;
+    overflow:visible !important;
+}
+.workspace > .left-panel, .workspace > .editor-area, .workspace > .right-panel { min-width:0; min-height:0; height:100%; }
+.workspace > .left-panel { overflow:hidden; }
+.workspace > .editor-area { display:flex; flex-direction:column; min-width:560px; overflow:hidden; }
+.workspace > .right-panel { min-width:310px; overflow-x:hidden; overflow-y:auto; overscroll-behavior-y:contain; }
+.left-panel, .right-panel { display:flex; flex-direction:column; }
+.asset-grid, .layer-list { min-height:0; overscroll-behavior:contain; }
+.asset-grid { flex:1 1 0; overflow:auto; }
+.layer-list { flex:1 1 auto; overflow-y:auto; overflow-x:hidden; }
+.panel-tabs, .panel-footer, .panel-bottom-actions, .right-heading, .right-footer { flex-shrink:0; }
+
+/* Toolbars remain reachable; the canvas itself gets its own horizontal scroll when zoomed in. */
+.editor-toolbar {
+    display:flex;
+    flex:0 0 48px;
+    height:48px;
+    min-width:0;
+    gap:10px;
+    padding:0 10px;
+    overflow-x:auto;
+    overflow-y:hidden;
+    justify-content:space-between;
+    scrollbar-width:thin;
+    overscroll-behavior-x:contain;
+}
+.editor-toolbar > .tool-group { flex:0 0 auto; white-space:nowrap; }
+.editor-toolbar button { flex:0 0 auto; }
+.canvas-meta { flex:0 0 auto; white-space:nowrap; }
+.zoom-label { flex:0 0 30px; }
+.canvas-stage {
+    /* Flex column lets auto margins center the artboard when it fits, while
+       keeping the artboard anchored to the start edge when it overflows. */
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    flex:1 1 auto;
+    min-width:0;
+    min-height:0;
+    overflow:auto;
+    padding:20px 18px 34px;
+    overscroll-behavior-x:auto;
+    overscroll-behavior-y:contain;
+    scrollbar-width:thin;
+    scrollbar-color:#c9c5df transparent;
+}
+.canvas-stage::-webkit-scrollbar { width:9px; height:9px; }
+.canvas-stage::-webkit-scrollbar-thumb { background:#c9c5df; border-radius:9px; }
+.canvas-wrap {
+    position:relative;
+    display:block;
+    flex:0 0 auto;
+    align-self:flex-start;
+    max-width:none;
+    min-width:0;
+    height:auto;
+    aspect-ratio:1200 / 630;
+    /* Auto margins center the canvas on both axes when there is free space.
+       If it is larger than the viewport, margins collapse to zero so its
+       left/top edges remain reachable by scrolling. */
+    margin:auto;
+    transition:width .16s ease;
+    box-shadow:0 9px 35px #35364b16,0 1px 3px #25263b14;
+    background:#fff;
+}
+.artboard { display:block; width:100%; height:100%; aspect-ratio:1200 / 630; touch-action:none; overflow:visible; }
+.artboard-caption { left:0; right:0; top:calc(100% + 8px); white-space:nowrap; }
+.bottom-bar { flex:0 0 36px; height:36px; min-height:36px; padding:0 12px; white-space:nowrap; }
+
+@media (max-width:1000px) {
+    .topbar { flex-basis:56px; height:56px; padding:0 12px; gap:10px; }
+    .workspace { grid-template-columns:250px minmax(560px,1fr) 310px !important; min-width:1120px !important; }
+    .editor-toolbar { flex-basis:46px; height:46px; }
+    .canvas-stage { padding:14px 12px 28px; }
+    .bottom-bar { flex-basis:34px; height:34px; min-height:34px; font-size:10px; }
+}
+@media (max-height:760px) {
+    .topbar { flex-basis:52px; height:52px; }
+    .editor-toolbar { flex-basis:44px; height:44px; }
+    .bottom-bar { flex-basis:32px; height:32px; min-height:32px; }
+    .canvas-stage { padding-top:10px; padding-bottom:24px; }
+    .right-panel .inspector-section { padding-top:11px; padding-bottom:11px; }
+}
+@media (prefers-reduced-motion:reduce) { .canvas-wrap { transition:none; } }
