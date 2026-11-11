@@ -68,8 +68,8 @@ button:disabled {
 }
 .brand strong {
   font:
-    800 14px Manrope,
-    sans-serif;
+          800 14px Manrope,
+          sans-serif;
   letter-spacing: 0.065em;
   color: #2d2e40;
 }
@@ -218,8 +218,8 @@ button:disabled {
 .panel-intro h2,
 .right-heading h2 {
   font:
-    700 15px Manrope,
-    sans-serif;
+          700 15px Manrope,
+          sans-serif;
   margin: 0;
   color: #303145;
 }
@@ -438,8 +438,8 @@ button:disabled {
   position: relative;
   transition: width 0.16s;
   box-shadow:
-    0 9px 35px #35364b16,
-    0 1px 3px #25263b14;
+          0 9px 35px #35364b16,
+          0 1px 3px #25263b14;
   background: white;
 }
 .artboard {
@@ -540,8 +540,8 @@ button:disabled {
   align-items: center;
   justify-content: center;
   font:
-    700 14px Manrope,
-    sans-serif;
+          700 14px Manrope,
+          sans-serif;
   color: #6e60c8;
   text-align: center;
 }
@@ -1226,7 +1226,7 @@ body {
   max-width: 100%;
   overflow-x: auto !important;
   overflow-y: hidden !important;
-  overscroll-behavior-x: auto;
+  overscroll-behavior-x: contain;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: auto;
   scrollbar-color: #887db8 #e8e6ef;
@@ -1379,8 +1379,8 @@ body {
   margin: auto;
   transition: width 0.16s ease;
   box-shadow:
-    0 9px 35px #35364b16,
-    0 1px 3px #25263b14;
+          0 9px 35px #35364b16,
+          0 1px 3px #25263b14;
   background: #fff;
 }
 .artboard {
