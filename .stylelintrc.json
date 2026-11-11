@@ -1,0 +1,42 @@
+{
+  "extends": ["stylelint-config-standard"],
+  "plugins": ["stylelint-prettier"],
+  "rules": {
+    "prettier/prettier": true,
+    "rule-empty-line-before": [
+      "always",
+      {
+        "except": ["first-nested"],
+        "ignore": ["after-comment"]
+      }
+    ],
+    "at-rule-empty-line-before": [
+      "always",
+      {
+        "except": ["first-nested", "blockless-after-same-name-blockless"],
+        "ignore": ["after-comment", "first-nested"]
+      }
+    ],
+    "declaration-empty-line-before": null,
+    "comment-empty-line-before": [
+      "always",
+      {
+        "except": ["first-nested"],
+        "ignore": ["stylelint-commands", "after-comment"]
+      }
+    ],
+    "custom-property-empty-line-before": null,
+    "selector-max-id": null,
+    "selector-class-pattern": null,
+    "no-descending-specificity": null,
+    "function-no-unknown": null,
+    "media-feature-range-notation": null,
+    "alpha-value-notation": null,
+    "color-function-notation": null,
+    "declaration-block-no-redundant-longhand-properties": null,
+    "shorthand-property-no-redundant-values": null,
+    "value-keyword-case": null,
+    "font-family-no-missing-generic-family-keyword": null,
+    "no-duplicate-selectors": null
+  }
+}
