@@ -757,6 +757,10 @@ function App() {
     if (activeTool !== 'select') return;
     e.stopPropagation();
     setSelected(item.instanceId);
+
+    // Касание: первый тап только выбирает объект, чтобы свайп по холсту мог прокручивать страницу/холст.
+    // Перетаскивать можно уже выбранный объект (у него touch-action: none).
+    if (e.pointerType === 'touch' && selected !== item.instanceId) return;
     const rect = canvasRef.current.getBoundingClientRect();
     const sx = W / rect.width,
       sy = H / rect.height;
@@ -831,6 +835,15 @@ function App() {
       dragRef.current = null;
       setIsRotating(false);
     }
+  };
+
+  const onPointerCancel = () => {
+    const drag = dragRef.current;
+
+    if (!drag) return;
+    dragRef.current = null;
+    setIsRotating(false);
+    setItems(drag.snapshot);
   };
 
   const exportSvg = () => {
@@ -1419,6 +1432,7 @@ function App() {
                   viewBox={`0 0 ${W} ${H}`}
                   onPointerMove={onPointerMove}
                   onPointerUp={onPointerUp}
+                  onPointerCancel={onPointerCancel}
                   onPointerLeave={onPointerUp}
                   onClick={() => setSelected(null)}
                 >
@@ -1453,7 +1467,10 @@ function App() {
                             transform={`translate(${it.x + w / 2} ${it.y + h / 2}) rotate(${it.rotation})`}
                             opacity={it.opacity ?? 1}
                             onPointerDown={(e) => onPointerDown(e, it)}
-                            style={{ cursor: 'move' }}
+                            style={{
+                              cursor: 'move',
+                              touchAction: isSel ? 'none' : 'pan-x pan-y pinch-zoom',
+                            }}
                             onClick={(e) => e.stopPropagation()}
                           >
                             <svg
