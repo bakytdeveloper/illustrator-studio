@@ -1554,7 +1554,11 @@ body {
   min-height: 0;
   overflow: auto;
   padding: 20px 18px 34px;
-  overscroll-behavior-x: auto;
+
+  /* Содержим горизонтальный overscroll внутри холста, чтобы его «хвост»
+       не передавался в workspace-viewport и не сдвигал всю рабочую область
+       вправо, когда пользователь прокручивает холст вертикально. */
+  overscroll-behavior-x: contain;
   overscroll-behavior-y: contain;
   scrollbar-width: thin;
   scrollbar-color: #c9c5df transparent;
@@ -1676,5 +1680,279 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .canvas-wrap {
     transition: none;
+  }
+}
+
+
+/* Adaptive workspace refinements: the SVG artboard keeps its logical 1200×630 size. */
+.scroll-hint { display: none; }
+
+@media (min-width: 701px) and (max-width: 1180px) {
+  .scroll-hint { display:flex; align-items:center; justify-content:space-between; gap:14px; min-height:34px; padding:6px 16px; background:#fbfaff; border-bottom:1px solid #e9e6f4; color:#68647e; font-size:11px; line-height:1.35; }
+  .scroll-hint-track { display:block; position:relative; flex:0 0 86px; height:5px; border-radius:10px; background:#e6e2f2; overflow:hidden; }
+  .scroll-hint-track i { display:block; width:42%; height:100%; border-radius:inherit; background:#887db8; }
+  .scroll-hint-mobile { display:none; }
+  .workspace { grid-template-columns:250px minmax(560px,1fr) 300px !important; width:max(100%,1110px) !important; min-width:1110px !important; }
+  .workspace > .editor-area { min-width:560px; }
+  .workspace > .right-panel { min-width:300px; }
+}
+
+@media (min-width: 1181px) {
+  .workspace { grid-template-columns:minmax(230px,264px) minmax(0,1fr) minmax(260px,286px) !important; width:100% !important; min-width:0 !important; }
+  .workspace > .editor-area, .workspace > .right-panel { min-width:0; }
+  .workspace-viewport { overflow-x:hidden !important; }
+}
+
+@media (max-width: 700px) {
+  html, body, #root { height:auto; min-height:100%; }
+  body { overflow:auto !important; overscroll-behavior:auto; }
+  .app-shell { height:auto; min-height:100vh; min-height:100dvh; overflow:visible; }
+  .topbar { position:sticky; top:0; z-index:20; flex:0 0 auto; min-height:58px; height:auto; padding:8px 12px; gap:10px; overflow-x:auto; }
+  .brand { min-width:174px; gap:8px; }
+  .brand-mark { width:31px; height:31px; }
+  .brand strong { font-size:12px; }
+  .brand small { font-size:8px; }
+  .doc-name { display:none; }
+  .top-actions { margin-left:auto; gap:4px; }
+  .secondary-btn, .primary-btn { height:34px; padding:0 9px; font-size:11px; }
+  .scroll-hint { display:flex; min-height:34px; align-items:center; padding:7px 13px; background:#fbfaff; border-bottom:1px solid #e9e6f4; color:#68647e; font-size:11px; line-height:1.4; }
+  .scroll-hint-wide, .scroll-hint-track { display:none; }
+  .workspace-viewport { height:auto; min-height:0 !important; overflow:visible !important; touch-action:pan-y; scrollbar-width:none; }
+  .workspace-viewport::-webkit-scrollbar { display:none; }
+  .workspace { display:flex !important; flex-direction:column; width:100% !important; min-width:0 !important; height:auto; min-height:0; overflow:visible !important; }
+  .workspace > .left-panel, .workspace > .editor-area, .workspace > .right-panel { width:100%; min-width:0; height:auto; overflow:visible; }
+  .workspace > .left-panel { order:1; min-height:300px; max-height:min(52vh,430px); border-right:0; border-bottom:1px solid var(--line); }
+  .left-panel .asset-grid, .left-panel .layer-list { min-height:150px; overflow:auto; -webkit-overflow-scrolling:touch; }
+  .workspace > .editor-area { order:2; min-height:420px; overflow:visible; }
+  .editor-toolbar { position:sticky; top:58px; z-index:10; flex:0 0 46px; height:46px; padding:0 9px; gap:8px; }
+  .canvas-stage { min-height:300px; max-height:68vh; padding:16px 12px 32px; overflow:auto; -webkit-overflow-scrolling:touch; }
+  .canvas-wrap { margin:auto; }
+  .bottom-bar { position:relative; min-height:38px; height:auto; padding:7px 10px; gap:8px; white-space:normal; }
+  .bottom-left { flex-wrap:wrap; gap:5px; font-size:10px; }
+  .bottom-right button { white-space:nowrap; font-size:10px; }
+  .workspace > .right-panel { order:3; min-height:0; max-height:none; overflow:visible; border-left:0; border-top:1px solid var(--line); }
+  .right-panel .inspector-section { padding:15px 16px; }
+  .right-footer { margin-top:0; }
+  .ai-card { margin:12px; }
+  .panel-tabs { padding:0 13px; }
+}
+
+@media (max-width: 380px) {
+  .topbar { padding-left:8px; padding-right:8px; }
+  .top-actions .icon-btn { width:30px; height:30px; }
+  .primary-btn { padding:0 7px; gap:4px; }
+  .canvas-meta { font-size:9px; gap:4px; }
+  .editor-toolbar { padding:0 6px; gap:4px; }
+  .bottom-right button { padding:4px 2px; }
+}
+
+@media (max-height: 620px) and (min-width: 701px) {
+  .app-shell { min-height:0; }
+  .workspace > .left-panel, .workspace > .right-panel { overflow-y:auto; scrollbar-width:thin; }
+}
+
+@media (prefers-reduced-motion: reduce) { .scroll-hint-track i { animation:none; } }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Scroll axis rules (единая схема прокрутки)
+   • .workspace-viewport — только горизонтальный сдвиг панелей (когда они не влезают).
+   • .asset-grid / .layer-list / .right-panel — ТОЛЬКО вертикальная прокрутка.
+   • .canvas-stage — обе оси (зум), ось фиксируется в JS (см. main.jsx).
+   • Прокрутка не «протекает» в соседние контейнеры (overscroll-behavior).
+   ═══════════════════════════════════════════════════════════════════════════ */
+.asset-grid,
+.layer-list,
+.workspace > .right-panel {
+  overflow-x: hidden !important;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  /* Браузер сам блокирует горизонтальную составляющую жеста: вертикальный свайп
+     по панели не сдвигает рабочую область вправо. Горизонтально рабочую область
+     можно двигать со стороны холста, тулбара, подсказки или её полосы прокрутки. */
+  touch-action: pan-y;
+}
+
+.left-panel,
+.workspace > .editor-area {
+  overscroll-behavior: contain;
+}
+
+.canvas-stage {
+  overscroll-behavior: contain;
+}
+
+/* Низкие экраны (смартфон/планшет в горизонтальном положении, высота ≤ 620px).
+   Левая панель — ОДИН вертикальный скролл: вкладки закреплены сверху, а поиск,
+   категории и карточки (asset-grid) идут обычным потоком, поэтому до любой
+   карточки можно доскроллить. Раньше asset-grid получал flex: 1 1 0 и сжимался в ноль. */
+@media (max-height: 620px) and (min-width: 701px) {
+  .workspace > .left-panel,
+  .workspace > .right-panel {
+    overflow-x: hidden !important;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .workspace > .left-panel > * {
+    flex-shrink: 0;
+  }
+
+  .workspace > .left-panel > .panel-tabs {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: #fff;
+  }
+
+  .workspace > .left-panel .asset-grid,
+  .workspace > .left-panel .layer-list {
+    flex: 0 0 auto !important;
+    height: auto;
+    min-height: 0;
+    overflow: visible !important;
+    touch-action: pan-y;
+  }
+
+  .workspace > .left-panel .panel-footer,
+  .workspace > .left-panel .panel-bottom-actions {
+    margin-top: 0;
+    padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* Мобильный вертикальный режим: страница скроллится по Y, внутренние блоки — по своим осям. */
+@media (max-width: 700px) {
+  .left-panel .asset-grid,
+  .left-panel .layer-list {
+    overflow-x: hidden !important;
+    overflow-y: auto;
+    touch-action: pan-y;
+  }
+
+  .canvas-stage {
+    overscroll-behavior: contain;
+  }
+}
+
+/* Узкий смартфон в горизонтальном положении (≤700px по ширине, низкая высота):
+   страница скроллится целиком, а списки получают собственную высоту и свой вертикальный скролл,
+   чтобы карточки были доступны (раньше левая панель ограничивалась 52vh и обрезала список). */
+@media (max-width: 700px) and (max-height: 520px) and (orientation: landscape) {
+  .workspace > .left-panel {
+    max-height: none;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .left-panel .asset-grid,
+  .left-panel .layer-list {
+    flex: 0 0 auto;
+    height: min(70vh, 320px);
+    min-height: 150px;
+    overflow-x: hidden !important;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Вертикальный режим смартфона (≤700px): прокручивается СТРАНИЦА целиком.
+   • Никаких «ловушек»: внутренние списки передают прокрутку странице, когда доходят до края
+     (overscroll-behavior: auto), поэтому до конца страницы можно доскроллить, начав свайп где угодно.
+   • Колонка не зависит от flex-basis:0 и 100vh — высота считается по содержимому,
+     поэтому нижняя часть (правая панель) всегда достижима.
+   • Запас снизу под «домашнюю полосу» iOS / панель навигации Android.
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 700px) {
+  html,
+  body,
+  #root {
+    height: auto !important;
+    min-height: 100% !important;
+    overflow-x: hidden;
+  }
+
+  html {
+    overflow-y: auto;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    overflow-y: auto !important;
+    overscroll-behavior: auto;
+  }
+
+  .app-shell {
+    display: block;
+    height: auto !important;
+    min-height: 100dvh !important;
+    overflow: visible;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .workspace-viewport,
+  .workspace {
+    display: block !important;
+    flex: none !important;
+    height: auto !important;
+    overflow: visible !important;
+    overscroll-behavior: auto;
+  }
+
+  .workspace {
+    display: flex !important;
+    flex-direction: column;
+  }
+
+  /* Панели — часть страницы, не отдельные скроллы. */
+  .workspace > .left-panel,
+  .workspace > .editor-area,
+  .workspace > .right-panel {
+    height: auto !important;
+    max-height: none;
+    overflow: visible !important;
+    overscroll-behavior: auto;
+    touch-action: auto;
+  }
+
+  .workspace > .right-panel {
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Списки левой панели: собственная высота и свой вертикальный скролл, на краю — скроллится страница. */
+  .left-panel .asset-grid,
+  .left-panel .layer-list {
+    flex: 0 0 auto;
+    height: min(46vh, 380px);
+    min-height: 150px;
+    overflow-x: hidden !important;
+    overflow-y: auto;
+    overscroll-behavior-x: contain;
+    overscroll-behavior-y: auto;
+    touch-action: pan-y;
+  }
+
+  /* Холст: свои оси при зуме; горизонтальный «хвост» не уходит в страницу, вертикальный — уходит. */
+  .canvas-stage {
+    overscroll-behavior-x: contain;
+    overscroll-behavior-y: auto;
+  }
+
+  /* Липкие панели не должны перехватывать вертикальный свайп. */
+  .topbar,
+  .editor-toolbar,
+  .scroll-hint {
+    touch-action: pan-x pan-y;
+  }
+}
+
+@media (max-width: 700px) and (max-height: 520px) and (orientation: landscape) {
+  .left-panel .asset-grid,
+  .left-panel .layer-list {
+    height: min(70vh, 320px);
+    overscroll-behavior-y: auto;
   }
 }

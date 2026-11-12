@@ -263,9 +263,9 @@ function colorize(markup, colors, monochrome = false) {
     const rgb =
       hex.length === 7
         ? hex
-            .slice(1)
-            .match(/.{2}/g)
-            .map((v) => parseInt(v, 16))
+          .slice(1)
+          .match(/.{2}/g)
+          .map((v) => parseInt(v, 16))
         : [128, 128, 128];
     const light = rgb[0] * 0.299 + rgb[1] * 0.587 + rgb[2] * 0.114 > 155;
 
@@ -748,8 +748,8 @@ function App() {
       kind === 'balanced'
         ? 'Собранная композиция'
         : kind === 'headline'
-          ? 'Под заголовок'
-          : 'Композиция со смещением',
+        ? 'Под заголовок'
+        : 'Композиция со смещением',
     );
   };
 
@@ -947,48 +947,162 @@ function App() {
 
     if (!viewport) return;
 
-    // Route a regular vertical mouse wheel to the horizontal surface under the
-    // pointer. Canvas zoom scrolling takes priority; once it reaches an edge,
-    // the outer workspace continues towards the inspector. No preventDefault is
-    // used, so the listener is safe to register as passive.
+    // ─────────────────────────────────────────────────────────────────────────
+    // Единая логика прокрутки (колесо / тачпад / касание) с фиксацией оси.
+    // Цель: вертикальный жест НИКОГДА не двигает контент по горизонтали
+    // (и наоборот), независимо от экрана и контейнера.
+    // Контейнеры: .asset-grid, .layer-list, .right-panel, .canvas-stage,
+    // а внешний .workspace-viewport отвечает только за горизонтальный сдвиг панелей.
+    // ─────────────────────────────────────────────────────────────────────────
+    const AXIS = {
+      x: { pos: 'scrollLeft', size: 'scrollWidth', client: 'clientWidth', overflow: 'overflowX' },
+      y: { pos: 'scrollTop', size: 'scrollHeight', client: 'clientHeight', overflow: 'overflowY' },
+    };
+
+    const isScrollable = (el, axis) => {
+      const a = AXIS[axis];
+      const o = getComputedStyle(el)[a.overflow];
+
+      return (o === 'auto' || o === 'scroll') && el[a.size] - el[a.client] > 1;
+    };
+
+    const canMove = (el, axis, delta) => {
+      const a = AXIS[axis];
+      const max = el[a.size] - el[a.client];
+
+      return (delta > 0 && el[a.pos] < max - 1) || (delta < 0 && el[a.pos] > 1);
+    };
+
+    // Ближайший к курсору предок (до viewport включительно), который реально прокручивается по оси.
+    const findScroller = (from, axis, delta) => {
+      let el = from;
+
+      while (el && el instanceof Element) {
+        if (isScrollable(el, axis) && canMove(el, axis, delta)) return el;
+        if (el === viewport) break;
+        el = el.parentElement;
+      }
+
+      return null;
+    };
+
+    const isTextField = (t) => t.closest('input[type="text"], input[type="number"], textarea, select, [contenteditable="true"]');
+
+    // ── Колесо / тачпад ──────────────────────────────────────────────────────
     const onWheel = (event) => {
       const target = event.target;
 
-      if (!(target instanceof Element)) return;
-      if (target.closest('.asset-grid,.layer-list,.right-panel')) return;
-      // Trackpad horizontal gestures are handled natively by the browser.
-      // Shift + wheel and ordinary vertical wheel are mapped to horizontal scroll.
-      if (Math.abs(event.deltaX) > Math.abs(event.deltaY) && !event.shiftKey) return;
-      const rawDelta = event.shiftKey ? event.deltaY || event.deltaX : event.deltaY;
+      if (!(target instanceof Element) || event.ctrlKey) return; // ctrl+колесо = зум браузера
+      if (isTextField(target)) return;
 
-      if (!rawDelta) return;
-      // Normalize line/page-based wheels so the response is consistent across devices.
-      const scale = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? viewport.clientWidth : 1;
-      const delta = rawDelta * scale;
-      const stage = target.closest('.canvas-stage');
+      const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? viewport.clientHeight : 1;
+      let dx = event.deltaX * unit;
+      let dy = event.deltaY * unit;
 
-      if (stage) {
-        const maxStage = Math.max(0, stage.scrollWidth - stage.clientWidth);
-        const canMoveStage =
-          (delta > 0 && stage.scrollLeft < maxStage - 1) || (delta < 0 && stage.scrollLeft > 1);
-
-        if (maxStage > 0 && canMoveStage) {
-          stage.scrollLeft = Math.max(0, Math.min(maxStage, stage.scrollLeft + delta));
-
-          return;
-        }
+      // Shift + колесо мыши = горизонтальная прокрутка.
+      if (event.shiftKey && dy && !dx) {
+        dx = dy;
+        dy = 0;
       }
 
-      const maxWorkspace = Math.max(0, viewport.scrollWidth - viewport.clientWidth);
+      if (!dx && !dy) return;
 
-      if (maxWorkspace > 0) {
-        viewport.scrollLeft = Math.max(0, Math.min(maxWorkspace, viewport.scrollLeft + delta));
-      }
+      // Строго одна ось — нативное поведение (плавность, инерция) не трогаем.
+      // Горизонтальную ось при Shift обрабатываем сами (нативно Shift работает не везде).
+      const axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+      const delta = axis === 'x' ? dx : dy;
+      const crossDelta = axis === 'x' ? dy : dx;
+      const wasShift = event.shiftKey && !event.deltaX;
+
+      if (!crossDelta && !wasShift) return;
+
+      // Диагональный «шум» тачпада или Shift: гасим побочную ось и двигаем только основную.
+      const scroller = findScroller(target, axis, delta);
+
+      if (scroller) scroller[AXIS[axis].pos] += delta;
+
+      // Если мы в раскладке с реальной горизонтальной прокруткой — блокируем «утечку» побочной оси.
+      if (scroller || getComputedStyle(viewport).overflowX !== 'visible') event.preventDefault();
     };
 
-    viewport.addEventListener('wheel', onWheel, { passive: true });
+    // passive: false нужен, чтобы вызвать preventDefault при диагональном жесте.
+    viewport.addEventListener('wheel', onWheel, { passive: false });
 
-    return () => viewport.removeEventListener('wheel', onWheel);
+    // ── Касание: фиксация оси для .canvas-stage (двухосевой контейнер) ──────
+    // Вертикальные панели (asset-grid, layer-list, right-panel) защищены CSS: touch-action: pan-y.
+    let lock = null; // { axis, el, left, top, startX, startY, decided, until }
+    let lockTimer = 0;
+
+    const clearLock = () => {
+      lock = null;
+      clearTimeout(lockTimer);
+    };
+
+    const onTouchStart = (event) => {
+      if (event.touches.length !== 1) return clearLock();
+
+      const stage = event.target instanceof Element ? event.target.closest('.canvas-stage') : null;
+
+      if (!stage) return clearLock();
+
+      clearTimeout(lockTimer);
+      lock = {
+        axis: null,
+        el: stage,
+        left: stage.scrollLeft,
+        top: stage.scrollTop,
+        startX: event.touches[0].clientX,
+        startY: event.touches[0].clientY,
+      };
+    };
+
+    const onTouchMove = (event) => {
+      if (!lock) return;
+
+      if (event.touches.length !== 1) return clearLock(); // щипок = зум, не мешаем
+
+      if (!lock.axis) {
+        const dx = Math.abs(event.touches[0].clientX - lock.startX);
+        const dy = Math.abs(event.touches[0].clientY - lock.startY);
+
+        if (Math.max(dx, dy) < 8) return;
+        lock.axis = dy >= dx ? 'y' : 'x';
+      }
+
+      // Возвращаем побочную ось на место.
+      if (lock.axis === 'y') lock.el.scrollLeft = lock.left;
+      else lock.el.scrollTop = lock.top;
+    };
+
+    const onTouchEnd = () => {
+      if (!lock) return;
+      // Инерция после отпускания: ещё ~0.8 c держим ось (см. onScrollCapture).
+      lockTimer = setTimeout(clearLock, 800);
+    };
+
+    // scroll не всплывает, поэтому слушаем в capture-фазе.
+    const onScrollCapture = (event) => {
+      if (!lock || !lock.axis || event.target !== lock.el) return;
+
+      if (lock.axis === 'y' && lock.el.scrollLeft !== lock.left) lock.el.scrollLeft = lock.left;
+      if (lock.axis === 'x' && lock.el.scrollTop !== lock.top) lock.el.scrollTop = lock.top;
+    };
+
+    viewport.addEventListener('touchstart', onTouchStart, { passive: true });
+    viewport.addEventListener('touchmove', onTouchMove, { passive: true });
+    viewport.addEventListener('touchend', onTouchEnd, { passive: true });
+    viewport.addEventListener('touchcancel', clearLock, { passive: true });
+    viewport.addEventListener('scroll', onScrollCapture, { capture: true, passive: true });
+
+    return () => {
+      clearLock();
+      viewport.removeEventListener('wheel', onWheel);
+      viewport.removeEventListener('touchstart', onTouchStart);
+      viewport.removeEventListener('touchmove', onTouchMove);
+      viewport.removeEventListener('touchend', onTouchEnd);
+      viewport.removeEventListener('touchcancel', clearLock);
+      viewport.removeEventListener('scroll', onScrollCapture, { capture: true });
+    };
   }, []);
 
   useEffect(() => {
@@ -1026,6 +1140,17 @@ function App() {
           </button>
         </div>
       </header>
+      <div className="scroll-hint" role="note" aria-label="Подсказка по прокрутке">
+        <span className="scroll-hint-wide">
+          Панели можно прокручивать по горизонтали: Shift + колесо мыши или два пальца на тачпаде
+        </span>
+        <span className="scroll-hint-mobile">
+          Прокрутите страницу вниз, чтобы перейти к редактору и свойствам
+        </span>
+        <span className="scroll-hint-track" aria-hidden="true">
+          <i />
+        </span>
+      </div>
       <div
         ref={workspaceViewportRef}
         className="workspace-viewport"
