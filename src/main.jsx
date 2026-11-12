@@ -1118,6 +1118,28 @@ function App() {
     };
   }, []);
 
+  // Касания на холсте: пока идёт перетаскивание/поворот объекта, прокрутку страницы блокируем программно.
+  // Это работает во всех браузерах (в отличие от touch-action на SVG-элементах, который поддерживается не везде).
+  // Вне перетаскивания жест остаётся нативным — холст и страница прокручиваются как обычно.
+  useEffect(() => {
+    const svg = canvasRef.current;
+
+    if (!svg) return;
+
+    const blockScrollWhileDragging = (event) => {
+      if (dragRef.current && event.cancelable) event.preventDefault();
+    };
+
+    // passive: false обязателен, иначе preventDefault игнорируется.
+    svg.addEventListener('touchstart', blockScrollWhileDragging, { passive: false });
+    svg.addEventListener('touchmove', blockScrollWhileDragging, { passive: false });
+
+    return () => {
+      svg.removeEventListener('touchstart', blockScrollWhileDragging);
+      svg.removeEventListener('touchmove', blockScrollWhileDragging);
+    };
+  }, []);
+
   useEffect(() => {
     if (firstRun && boundsReady && items.length === 0) loadExample('balanced');
   }, [boundsReady]);
