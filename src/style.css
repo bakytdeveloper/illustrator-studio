@@ -1979,3 +1979,25 @@ body {
     overscroll-behavior-y: auto;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Вертикальный телефон (≤700px): ВЕРТИКАЛЬ холста принадлежит странице.
+   Холст больше не вложенный вертикальный скролл (раньше max-height: 68vh + overflow:auto):
+   он растёт по высоте, и свайп вверх/вниз по нему всегда прокручивает страницу — к панели
+   управления и обратно, без «залипания» на краю холста.
+   По горизонтали холст прокручивается сам (когда зум шире экрана).
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 700px) {
+  .workspace > .editor-area .canvas-stage {
+    flex: 0 0 auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    overscroll-behavior-x: contain;
+    overscroll-behavior-y: auto;
+    touch-action: pan-x pan-y;
+    -webkit-overflow-scrolling: touch;
+  }
+}
